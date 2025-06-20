@@ -4,72 +4,76 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a single-file React application that implements an interactive logistics route optimizer using Dijkstra's algorithm. The entire application is contained in `app.js` with no build configuration or package management.
+This is a Preact-based interactive logistics route optimizer using Dijkstra's algorithm. The application features a clean architecture with separated business logic and UI components, using vanilla CSS for styling.
 
-## Current Project State
+## Architecture
 
-- **No package.json**: This project lacks npm/yarn configuration
-- **No build tools**: No webpack, vite, or other bundlers configured
-- **Single file architecture**: All code is in `app.js` (654 lines)
-- **No git repository**: Directory is not version controlled
-
-## Setting Up Development Environment
-
-To make this a functional React development project, you'll need to:
-
-```bash
-# Initialize npm project
-npm init -y
-
-# Install dependencies
-npm install react react-dom lucide-react
-
-# Install dev dependencies (example with Vite)
-npm install -D vite @vitejs/plugin-react
-
-# Create index.html entry point
-# Create vite.config.js
-# Move app.js to src/App.jsx
+### Project Structure
+```
+src/
+├── core/              # Business logic modules
+│   ├── dijkstra.js    # Shortest path algorithm
+│   ├── graph.js       # Graph data structure
+│   ├── geometry.js    # Coordinate calculations
+│   └── storage.js     # LocalStorage persistence
+├── components/        # Preact components
+│   ├── App.jsx        # Main application
+│   ├── Canvas.jsx     # Canvas rendering
+│   ├── Controls.jsx   # Control panel
+│   └── ConnectionEditor.jsx
+├── styles/            # Vanilla CSS modules
+│   ├── main.css       # Base styles & variables
+│   ├── components.css # Component styles
+│   └── buttons.css    # Button styles
+└── main.jsx          # Entry point
 ```
 
-## Code Architecture
+## Tech Stack
 
-### Main Component: DijkstraLogisticsApp
+- **Preact** (~3KB) - Lightweight React alternative
+- **Vanilla CSS** - No build-time CSS processing
+- **Vite** - Fast build tool
+- **No external UI libraries** - Custom components
 
-The application uses React hooks for state management:
-- `cities`: Array of city nodes with {id, name, x, y}
-- `connections`: Array of edges with {from, to, weight}
-- `shortestPath`: Result of Dijkstra's algorithm calculation
+## Development Commands
 
-### Key Features
-1. **Interactive Canvas**: Click to add cities, drag to create connections
-2. **Inline Editing**: Click connection weights to edit them directly
-3. **Dijkstra's Algorithm**: Implemented in `dijkstra()` function (lines 58-125)
-4. **Visual Feedback**: Color-coded cities and highlighted shortest path
+```bash
+npm install    # Install dependencies
+npm run dev    # Start development server
+npm run build  # Build for production
+```
 
-### Interaction Patterns
-- **Left Click**: Add city or select connection for editing
-- **Drag**: Create connection between cities
-- **Right Click**: Remove city and its connections
-- **Hover**: Visual feedback on connections and cities
+## Key Design Patterns
 
-## Dependencies Used
+### Business Logic Separation
+- Core modules are framework-agnostic
+- Graph operations isolated in `graph.js`
+- Algorithm implementation in `dijkstra.js`
+- Geometry calculations in `geometry.js`
 
-The app imports:
-- React (with hooks: useState, useRef, useEffect)
-- Lucide React icons (AlertCircle, Navigation, MapPin)
-- Tailwind CSS classes (inline styling)
+### State Management
+- Preact hooks for local state
+- LocalStorage for persistence
+- Graph instance manages data structure
 
-## Canvas Rendering
+### CSS Architecture
+- CSS variables for theming
+- BEM-inspired naming
+- Mobile-first responsive design
+- Component-scoped styles
 
-The app uses HTML5 Canvas API for visualization (lines 335-452):
-- Draws connections as lines with weight labels
-- Renders cities as colored circles
-- Updates on every state change via useEffect
+## Key Features
 
-## State Management Approach
+1. **Interactive Canvas**: Click/tap to add cities, drag to connect
+2. **Touch Support**: Full mobile compatibility with long-press
+3. **Weight Editing**: Click connections to edit weights
+4. **Dijkstra's Algorithm**: Finds shortest paths efficiently
+5. **Persistence**: Auto-saves state to localStorage
+6. **Responsive**: Works on all screen sizes
 
-Uses local component state with useState hooks. Key state updates:
-- City/connection modifications trigger full canvas re-render
-- Hover states tracked separately for performance
-- Edit mode managed through `editingConnection` state
+## Performance Optimizations
+
+- Preact instead of React (~93% smaller)
+- No CSS-in-JS or build-time CSS processing
+- Efficient canvas rendering with minimal redraws
+- Modular code splitting potential

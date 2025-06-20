@@ -1,0 +1,17 @@
+/* Import all CSS modules */
+@import './styles/main.css';
+@import './styles/components.css';
+@import './styles/buttons.css';
+
+/* Mobile-specific utilities */
+@media (max-width: 640px) {
+  .hide-mobile {
+    display: none;
+  }
+}
+
+@media (min-width: 641px) {
+  .show-mobile {
+    display: none;
+  }
+}
