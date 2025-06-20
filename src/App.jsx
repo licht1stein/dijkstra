@@ -13,8 +13,12 @@ const DijkstraLogisticsApp = () => {
   const [endCity, setEndCity] = useState(null);
   const [shortestPath, setShortestPath] = useState(null);
   const [distances, setDistances] = useState({});
+  const [canvasDimensions, setCanvasDimensions] = useState({ width: 600, height: 400 });
   const canvasRef = useRef(null);
+  const containerRef = useRef(null);
   const hoveredCityRef = useRef(null);
+  const longPressTimer = useRef(null);
+  const touchStartPos = useRef(null);
 
   // Save state to localStorage
   const saveToLocalStorage = (newCities, newConnections, newStartCity, newEndCity) => {
@@ -170,16 +174,35 @@ const DijkstraLogisticsApp = () => {
     return null;
   };
 
-  // Handle mouse down
-  const handleMouseDown = (e) => {
-    if (e.button === 2) return; // Ignore right clicks
-    
+  // Get coordinates from mouse or touch event
+  const getEventCoordinates = (e) => {
     const rect = canvasRef.current.getBoundingClientRect();
     const canvas = canvasRef.current;
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
-    const x = (e.clientX - rect.left) * scaleX;
-    const y = (e.clientY - rect.top) * scaleY;
+    
+    let clientX, clientY;
+    if (e.touches && e.touches.length > 0) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else if (e.changedTouches && e.changedTouches.length > 0) {
+      clientX = e.changedTouches[0].clientX;
+      clientY = e.changedTouches[0].clientY;
+    } else {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    }
+    
+    const x = (clientX - rect.left) * scaleX;
+    const y = (clientY - rect.top) * scaleY;
+    return { x, y };
+  };
+
+  // Handle pointer down (mouse or touch)
+  const handlePointerDown = (e) => {
+    if (e.button === 2) return; // Ignore right clicks
+    
+    const { x, y } = getEventCoordinates(e);
     
     // Check if clicking on a connection line first
     const connection = getConnectionAtPosition(x, y);
@@ -192,6 +215,29 @@ const DijkstraLogisticsApp = () => {
     const city = getCityAtPosition(x, y);
     
     if (city) {
+      // For touch events, set up long press detection
+      if (e.type === 'touchstart') {
+        touchStartPos.current = { x, y, cityId: city.id };
+        longPressTimer.current = setTimeout(() => {
+          // Long press detected - remove city
+          const updatedCities = cities.filter(c => c.id !== city.id);
+          const updatedConnections = connections.filter(c => c.from !== city.id && c.to !== city.id);
+          setCities(updatedCities);
+          setConnections(updatedConnections);
+          const newStartCity = startCity === city.id ? null : startCity;
+          const newEndCity = endCity === city.id ? null : endCity;
+          setStartCity(newStartCity);
+          setEndCity(newEndCity);
+          saveToLocalStorage(updatedCities, updatedConnections, newStartCity, newEndCity);
+          setShortestPath(null);
+          
+          // Vibrate for feedback if available
+          if (navigator.vibrate) {
+            navigator.vibrate(50);
+          }
+        }, 500); // 500ms for long press
+      }
+      
       // Start dragging from a city
       setDraggingFrom(city.id);
       setDragLine({ startX: city.x, startY: city.y, endX: x, endY: y });
@@ -210,14 +256,19 @@ const DijkstraLogisticsApp = () => {
     }
   };
 
-  // Handle mouse move
-  const handleMouseMove = (e) => {
-    const rect = canvasRef.current.getBoundingClientRect();
-    const canvas = canvasRef.current;
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    const x = (e.clientX - rect.left) * scaleX;
-    const y = (e.clientY - rect.top) * scaleY;
+  // Handle pointer move (mouse or touch)
+  const handlePointerMove = (e) => {
+    const { x, y } = getEventCoordinates(e);
+    
+    // Clear long press timer if moved too much
+    if (longPressTimer.current && touchStartPos.current) {
+      const dx = Math.abs(x - touchStartPos.current.x);
+      const dy = Math.abs(y - touchStartPos.current.y);
+      if (dx > 10 || dy > 10) {
+        clearTimeout(longPressTimer.current);
+        longPressTimer.current = null;
+      }
+    }
     
     if (draggingFrom !== null) {
       setDragLine(prev => ({ ...prev, endX: x, endY: y }));
@@ -234,8 +285,14 @@ const DijkstraLogisticsApp = () => {
     }
   };
 
-  // Handle mouse up
-  const handleMouseUp = (e) => {
+  // Handle pointer up (mouse or touch)
+  const handlePointerUp = (e) => {
+    // Clear long press timer
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    
     if (draggingFrom === null) {
       return;
     }
@@ -337,6 +394,27 @@ const DijkstraLogisticsApp = () => {
       setEditValue(selectedConnection.weight.toString());
     }
   }, [selectedConnection]);
+
+  // Handle canvas resize
+  useEffect(() => {
+    const updateCanvasSize = () => {
+      if (containerRef.current) {
+        const { width } = containerRef.current.getBoundingClientRect();
+        const isMobile = window.innerWidth < 768;
+        const height = isMobile ? Math.min(width * 0.8, 400) : 400;
+        const canvasWidth = Math.min(width - 32, 800); // Max width 800px with padding
+        
+        setCanvasDimensions({ 
+          width: canvasWidth, 
+          height: height 
+        });
+      }
+    };
+
+    updateCanvasSize();
+    window.addEventListener('resize', updateCanvasSize);
+    return () => window.removeEventListener('resize', updateCanvasSize);
+  }, []);
 
   // Draw connections and cities
   useEffect(() => {
@@ -471,20 +549,32 @@ const DijkstraLogisticsApp = () => {
           </div>
         </div>
         
-        <div className="p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="p-4 sm:p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
             {/* Canvas Area */}
             <div className="lg:col-span-2">
-              <div className="relative bg-gray-50 rounded-lg overflow-hidden">
+              <div ref={containerRef} className="relative bg-gray-50 rounded-lg overflow-hidden">
                 <canvas
                   ref={canvasRef}
-                  width={600}
-                  height={400}
-                  className="w-full cursor-crosshair"
-                  style={{ cursor: 'crosshair' }}
-                  onMouseDown={handleMouseDown}
-                  onMouseMove={handleMouseMove}
-                  onMouseUp={handleMouseUp}
+                  width={canvasDimensions.width}
+                  height={canvasDimensions.height}
+                  className="w-full cursor-crosshair touch-none"
+                  style={{ cursor: 'crosshair', maxWidth: '100%' }}
+                  onMouseDown={handlePointerDown}
+                  onMouseMove={handlePointerMove}
+                  onMouseUp={handlePointerUp}
+                  onTouchStart={(e) => {
+                    e.preventDefault();
+                    handlePointerDown(e);
+                  }}
+                  onTouchMove={(e) => {
+                    e.preventDefault();
+                    handlePointerMove(e);
+                  }}
+                  onTouchEnd={(e) => {
+                    e.preventDefault();
+                    handlePointerUp(e);
+                  }}
                   onMouseLeave={() => {
                     setDraggingFrom(null);
                     setDragLine(null);
@@ -506,53 +596,56 @@ const DijkstraLogisticsApp = () => {
               {/* Connection Editor */}
               {selectedConnection && (
                 <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-medium text-gray-700">Edit selected connection weight:</span>
-                    <input
-                      type="number"
-                      value={editValue}
-                      onChange={handleInputChange}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          updateConnectionWeight();
-                        }
-                      }}
-                      className="px-2 py-1 border border-gray-300 rounded w-20"
-                      min="1"
-                      step="1"
-                    />
-                    <button
-                      onClick={updateConnectionWeight}
-                      className="px-3 py-1 bg-orange-500 text-white rounded hover:bg-orange-600 text-sm"
-                    >
-                      Update
-                    </button>
-                    <button
-                      onClick={() => {
-                        setSelectedConnection(null);
-                        setEditValue('');
-                      }}
-                      className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600 text-sm"
-                    >
-                      Cancel
-                    </button>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                    <span className="text-xs sm:text-sm font-medium text-gray-700">Edit connection weight:</span>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        value={editValue}
+                        onChange={handleInputChange}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            updateConnectionWeight();
+                          }
+                        }}
+                        className="px-2 py-1 border border-gray-300 rounded w-20 text-sm"
+                        min="1"
+                        step="1"
+                      />
+                      <button
+                        onClick={updateConnectionWeight}
+                        className="px-3 py-1 bg-orange-500 text-white rounded hover:bg-orange-600 text-xs sm:text-sm"
+                      >
+                        Update
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedConnection(null);
+                          setEditValue('');
+                        }}
+                        className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600 text-xs sm:text-sm"
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
               
               {/* Instructions */}
-              <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+              <div className="mt-4 p-3 sm:p-4 bg-blue-50 rounded-lg">
                 <div className="flex items-start">
-                  <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 mr-2" />
-                  <div className="text-sm text-blue-800">
+                  <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
+                  <div className="text-xs sm:text-sm text-blue-800">
                     <p className="font-semibold mb-1">How to use:</p>
                     <ul className="list-disc list-inside space-y-1">
-                      <li>Click on empty space to add cities</li>
+                      <li>Click/tap on empty space to add cities</li>
                       <li>Drag from one city to another to connect them</li>
-                      <li>Click on a connection weight (number) to select it for editing</li>
-                      <li>Right-click on a city to remove it</li>
+                      <li>Click/tap on a connection weight (number) to edit it</li>
+                      <li className="hidden sm:list-item">Right-click on a city to remove it</li>
+                      <li className="sm:hidden">Long press on a city to remove it (mobile)</li>
                       <li>Select start and end cities from the dropdowns</li>
-                      <li>Click "Calculate Shortest Path" to find optimal route</li>
+                      <li>Tap "Calculate Shortest Path" to find optimal route</li>
                     </ul>
                   </div>
                 </div>
@@ -560,7 +653,7 @@ const DijkstraLogisticsApp = () => {
             </div>
             
             {/* Controls */}
-            <div className="space-y-4">
+            <div className="space-y-4 order-first lg:order-last">
               {/* Path Selection */}
               <div>
                 <h3 className="font-semibold text-gray-700 mb-2">Route Planning</h3>
