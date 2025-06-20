@@ -2,6 +2,8 @@
 
 An interactive web application for visualizing Dijkstra's shortest path algorithm.
 
+🌐 **Live Demo**: [https://licht1stein.github.io/dijkstra-react/](https://licht1stein.github.io/dijkstra-react/)
+
 ## Features
 
 - 🎯 Click to create cities (nodes)
