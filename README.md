@@ -1,6 +1,6 @@
 # Dijkstra's Algorithm Route Optimizer
 
-An interactive logistics route optimizer using Dijkstra's shortest path algorithm. Built with Preact for optimal performance and vanilla CSS for a clean, responsive design.
+An interactive logistics route optimizer using Dijkstra's shortest path algorithm implemented in both **WebAssembly** and **JavaScript**. Built with Preact for optimal performance and vanilla CSS for a clean, responsive design.
 
 🌐 **Live Demo**: [https://licht1stein.github.io/dijkstra/](https://licht1stein.github.io/dijkstra/)
 
