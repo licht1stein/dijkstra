@@ -1,17 +1,19 @@
-# Dijkstra's Algorithm Visualizer
+# Dijkstra's Algorithm Route Optimizer
 
-An interactive web application for visualizing Dijkstra's shortest path algorithm.
+An interactive logistics route optimizer using Dijkstra's shortest path algorithm. Built with Preact for optimal performance and vanilla CSS for a clean, responsive design.
 
 🌐 **Live Demo**: [https://licht1stein.github.io/dijkstra-react/](https://licht1stein.github.io/dijkstra-react/)
 
 ## Features
 
-- 🎯 Click to create cities (nodes)
-- 🔗 Drag between cities to create connections
-- ✏️ Click on connection weights to edit them
-- 🚀 Calculate shortest path between selected cities
-- 💾 Automatic state persistence with localStorage
-- 🔄 Reset canvas functionality
+- 🎯 **Interactive Canvas**: Click/tap to create cities (nodes)
+- 🔗 **Smart Connections**: Drag between cities to create weighted routes
+- ✏️ **Weight Editing**: Click connection weights to modify them
+- 📱 **Touch Support**: Full mobile compatibility with long-press gestures
+- 🚀 **Shortest Path**: Real-time route optimization using Dijkstra's algorithm  
+- 💾 **Persistence**: Auto-saves state to localStorage
+- 🔄 **Reset Function**: Clear canvas and start fresh
+- 📐 **Responsive Design**: Works seamlessly on all screen sizes
 
 ## Live Demo
 
@@ -48,10 +50,35 @@ npm run dev
 npm run build
 ```
 
-## Technologies Used
+## Architecture
 
-- React 18
-- Vite
-- Tailwind CSS
-- Lucide React Icons
-- GitHub Actions for CI/CD
+### Tech Stack
+- **Preact** (~3KB) - Lightweight React alternative for optimal performance
+- **Vanilla CSS** - Custom styling with CSS variables and responsive design
+- **Vite** - Fast build tool and development server
+- **GitHub Actions** - Automated CI/CD deployment
+
+### Project Structure
+```
+src/
+├── core/              # Business logic modules
+│   ├── dijkstra.js    # Shortest path algorithm
+│   ├── graph.js       # Graph data structure
+│   ├── geometry.js    # Coordinate calculations
+│   └── storage.js     # LocalStorage persistence
+├── components/        # Preact components
+│   ├── App.jsx        # Main application
+│   ├── Canvas.jsx     # Canvas rendering
+│   ├── Controls.jsx   # Control panel
+│   └── ConnectionEditor.jsx
+└── styles/            # Vanilla CSS modules
+    ├── main.css       # Base styles & variables
+    ├── components.css # Component styles
+    └── buttons.css    # Button styles
+```
+
+### Key Design Patterns
+- **Separated Business Logic**: Core algorithms isolated from UI
+- **Mobile-First Design**: Touch-friendly with responsive layouts  
+- **Performance Optimized**: Preact reduces bundle size by ~93% vs React
+- **Framework-Agnostic Core**: Business logic can be reused in any framework
