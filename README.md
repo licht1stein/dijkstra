@@ -8,7 +8,7 @@ An interactive logistics route optimizer using Dijkstra's shortest path algorith
 
 ## Demo
 
-![Demo Video](./img/dijkstra.mp4)
+![Demo](./img/dijkstra.gif)
 
 ## Features
 
