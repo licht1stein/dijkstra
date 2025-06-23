@@ -16,12 +16,36 @@ export class Graph {
   addCity(x, y) {
     const city = {
       id: Date.now(),
-      name: String.fromCharCode(65 + this.cities.length), // A, B, C, etc.
+      name: this.generateCityName(this.cities.length),
       x,
       y
     };
     this.cities.push(city);
     return city;
+  }
+
+  /**
+   * Generate city name for any number of cities
+   * @param {number} index - City index
+   * @returns {string} Generated city name
+   */
+  generateCityName(index) {
+    if (index < 26) {
+      // A-Z for first 26 cities
+      return String.fromCharCode(65 + index);
+    } else if (index < 702) {
+      // AA-ZZ for next 676 cities (26*26)
+      const firstChar = String.fromCharCode(65 + Math.floor((index - 26) / 26));
+      const secondChar = String.fromCharCode(65 + ((index - 26) % 26));
+      return firstChar + secondChar;
+    } else {
+      // AAA-ZZZ for next 17576 cities (26*26*26)
+      const remaining = index - 702;
+      const firstChar = String.fromCharCode(65 + Math.floor(remaining / (26 * 26)));
+      const secondChar = String.fromCharCode(65 + Math.floor((remaining % (26 * 26)) / 26));
+      const thirdChar = String.fromCharCode(65 + (remaining % 26));
+      return firstChar + secondChar + thirdChar;
+    }
   }
 
   /**
@@ -117,11 +141,4 @@ export class Graph {
     return graph;
   }
 
-  /**
-   * Get the maximum number of cities allowed
-   * @returns {number}
-   */
-  static get MAX_CITIES() {
-    return 10;
-  }
 }

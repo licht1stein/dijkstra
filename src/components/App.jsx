@@ -1,7 +1,7 @@
 import { h, Fragment } from 'preact';
 import { useState, useRef, useEffect } from 'preact/hooks';
 import { Graph } from '../core/graph';
-import { findShortestPath, calculateDefaultWeight } from '../core/dijkstra';
+import { findShortestPath, calculateDefaultWeight, initWasm, getWasmPerformanceInfo } from '../core/dijkstra-wasm';
 import { 
   normalizeEventCoordinates, 
   isPointInCircle, 
@@ -31,7 +31,8 @@ export function App() {
   const [startCity, setStartCity] = useState(null);
   const [endCity, setEndCity] = useState(null);
   const [shortestPath, setShortestPath] = useState(null);
-  const [canvasDimensions, setCanvasDimensions] = useState({ width: 600, height: 400 });
+  const [canvasDimensions, setCanvasDimensions] = useState({ width: 900, height: 600 });
+  const [wasmInfo, setWasmInfo] = useState({ isWasmReady: false, implementation: 'JavaScript' });
   
   // Refs
   const canvasRef = useRef(null);
@@ -40,8 +41,14 @@ export function App() {
   const longPressTimer = useRef(null);
   const touchStartPos = useRef(null);
   
-  // Load state from localStorage on mount
+  // Initialize WASM and load state from localStorage on mount
   useEffect(() => {
+    // Initialize WebAssembly module
+    initWasm().then(() => {
+      setWasmInfo(getWasmPerformanceInfo());
+    });
+    
+    // Load saved state
     const savedState = loadState();
     if (savedState && isValidState(savedState)) {
       const loadedGraph = Graph.deserialize(savedState);
@@ -147,7 +154,7 @@ export function App() {
       setDraggingFrom(city.id);
       setDragLine({ startX: city.x, startY: city.y, endX: x, endY: y });
       e.preventDefault();
-    } else if (graph.getCities().length < Graph.MAX_CITIES) {
+    } else {
       // Add new city
       const newGraph = new Graph();
       newGraph.cities = [...graph.getCities()];
@@ -311,6 +318,35 @@ export function App() {
       clearState();
     }
   };
+
+  const handleAutoConnect = () => {
+    const cities = graph.getCities();
+    if (cities.length < 2) {
+      alert('Need at least 2 cities to create connections');
+      return;
+    }
+
+    const newGraph = new Graph();
+    newGraph.cities = [...cities];
+    newGraph.connections = [...graph.getConnections()];
+
+    // Create random connections between cities
+    const maxConnections = Math.min(cities.length * 2, cities.length * (cities.length - 1) / 2);
+    const connectionsToAdd = Math.floor(Math.random() * maxConnections) + cities.length;
+
+    for (let i = 0; i < connectionsToAdd; i++) {
+      const fromCity = cities[Math.floor(Math.random() * cities.length)];
+      const toCity = cities[Math.floor(Math.random() * cities.length)];
+      
+      if (fromCity.id !== toCity.id) {
+        const weight = calculateDefaultWeight(fromCity, toCity);
+        newGraph.addConnection(fromCity.id, toCity.id, weight);
+      }
+    }
+
+    setGraph(newGraph);
+    persistState();
+  };
   
   return (
     <div className="app-layout">
@@ -321,12 +357,20 @@ export function App() {
               <h1 className="app-header__title">Logistics Route Optimizer</h1>
               <p className="app-header__subtitle">Using Dijkstra's Algorithm to find shortest paths</p>
             </div>
-            <button
-              onClick={handleResetCanvas}
-              className="btn btn--danger"
-            >
-              Reset Canvas
-            </button>
+            <div className="header-buttons">
+              <button
+                onClick={handleAutoConnect}
+                className="btn btn--secondary"
+              >
+                Auto Connect
+              </button>
+              <button
+                onClick={handleResetCanvas}
+                className="btn btn--danger"
+              >
+                Reset Canvas
+              </button>
+            </div>
           </div>
           
           <div className="app-content">
@@ -385,6 +429,7 @@ export function App() {
                 startCity={startCity}
                 endCity={endCity}
                 shortestPath={shortestPath}
+                wasmInfo={wasmInfo}
                 onStartCityChange={handleStartCityChange}
                 onEndCityChange={handleEndCityChange}
                 onCalculatePath={handleCalculatePath}

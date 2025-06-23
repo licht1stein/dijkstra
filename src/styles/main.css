@@ -120,6 +120,12 @@ body {
   font-size: var(--text-base);
 }
 
+.header-buttons {
+  display: flex;
+  gap: var(--spacing-3);
+  align-items: center;
+}
+
 .app-content {
   padding: var(--spacing-6);
 }

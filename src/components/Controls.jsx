@@ -5,6 +5,7 @@ export function Controls({
   startCity,
   endCity,
   shortestPath,
+  wasmInfo,
   onStartCityChange,
   onEndCityChange,
   onCalculatePath
@@ -86,6 +87,18 @@ export function Controls({
           )}
         </div>
       )}
+      
+      {/* Performance Info */}
+      <div className="performance">
+        <h3 className="performance__title">Performance</h3>
+        <div className="performance__info">
+          <span className="performance__label">Implementation:</span>
+          <span className={`performance__value ${wasmInfo.isWasmReady ? 'performance__value--wasm' : ''}`}>
+            {wasmInfo.implementation}
+            {wasmInfo.isWasmReady && ' ⚡'}
+          </span>
+        </div>
+      </div>
       
       {/* Legend */}
       <div className="legend">
