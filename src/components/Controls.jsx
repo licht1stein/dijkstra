@@ -48,7 +48,8 @@ export function Controls({
           
           <button
             onClick={onCalculatePath}
-            className="btn btn--success btn--full"
+            disabled={!startCity || !endCity}
+            className={`btn btn--full ${!startCity || !endCity ? 'btn--disabled' : 'btn--success'}`}
           >
             <svg className="btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
@@ -59,36 +60,40 @@ export function Controls({
       </div>
       
       {/* Results */}
-      {shortestPath && (
-        <div className="results">
-          <h3 className="results__title">Results</h3>
-          {shortestPath.distance === Infinity ? (
-            <p className="results__error">No path exists between selected cities</p>
+      <div className="results">
+        <h3 className="results__title">Results</h3>
+        <div className="results__content">
+          {shortestPath ? (
+            shortestPath.distance === Infinity ? (
+              <p className="results__error">No path exists between selected cities</p>
+            ) : (
+              <Fragment>
+                <p className="results__distance">
+                  Total Distance: <span className="results__distance-value">{shortestPath.distance}</span>
+                </p>
+                <p className="results__distance">Path:</p>
+                <div className="results__path">
+                  {shortestPath.path.map((cityId, index) => {
+                    const city = cities.find(c => c.id === cityId);
+                    return (
+                      <Fragment key={cityId}>
+                        <span className="results__city">
+                          {city?.name}
+                        </span>
+                        {index < shortestPath.path.length - 1 && (
+                          <span className="results__arrow">→</span>
+                        )}
+                      </Fragment>
+                    );
+                  })}
+                </div>
+              </Fragment>
+            )
           ) : (
-            <Fragment>
-              <p className="results__distance">
-                Total Distance: <span className="results__distance-value">{shortestPath.distance}</span>
-              </p>
-              <p className="results__distance">Path:</p>
-              <div className="results__path">
-                {shortestPath.path.map((cityId, index) => {
-                  const city = cities.find(c => c.id === cityId);
-                  return (
-                    <Fragment key={cityId}>
-                      <span className="results__city">
-                        {city?.name}
-                      </span>
-                      {index < shortestPath.path.length - 1 && (
-                        <span className="results__arrow">→</span>
-                      )}
-                    </Fragment>
-                  );
-                })}
-              </div>
-            </Fragment>
+            <p className="results__placeholder">Calculate a path to see results here</p>
           )}
         </div>
-      )}
+      </div>
       
       {/* Implementation Choice */}
       <div className="implementation">

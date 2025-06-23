@@ -225,15 +225,33 @@
 
 /* Results Section */
 .results {
-  padding: var(--spacing-4);
+  padding: var(--spacing-3);
   background-color: #d1fae5;
   border-radius: var(--radius-lg);
+  margin-top: var(--spacing-4);
 }
 
 .results__title {
   font-weight: 600;
   color: var(--color-gray-700);
   margin-bottom: var(--spacing-2);
+}
+
+.results__content {
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.results__placeholder {
+  color: var(--color-gray-500);
+  font-style: italic;
+  font-size: var(--text-sm);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  min-height: 60px;
 }
 
 .results__error {

@@ -32,7 +32,7 @@ export function App() {
   const [startCity, setStartCity] = useState(null);
   const [endCity, setEndCity] = useState(null);
   const [shortestPath, setShortestPath] = useState(null);
-  const [canvasDimensions, setCanvasDimensions] = useState({ width: 900, height: 600 });
+  const [canvasDimensions, setCanvasDimensions] = useState({ width: 900, height: 700 });
   const [wasmInfo, setWasmInfo] = useState({ isWasmReady: false, implementation: 'JavaScript' });
   const [implementationChoice, setImplementationChoice] = useState(() => {
     return localStorage.getItem('dijkstra-implementation') || 'auto';

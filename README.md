@@ -6,6 +6,10 @@ An interactive logistics route optimizer using Dijkstra's shortest path algorith
 
 🌐 **Live Demo**: [https://licht1stein.github.io/dijkstra/](https://licht1stein.github.io/dijkstra/)
 
+## Demo
+
+![Demo Video](./img/dijkstra.mp4)
+
 ## Features
 
 - 🎯 **Interactive Canvas**: Click/tap to create unlimited cities with smart naming (A-Z, AA-ZZ, AAA-ZZZ)

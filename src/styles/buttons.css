@@ -71,6 +71,18 @@
   background-color: #d97706;
 }
 
+.btn--disabled {
+  background-color: var(--color-gray-300) !important;
+  color: var(--color-gray-500) !important;
+  cursor: not-allowed !important;
+  opacity: 0.6;
+}
+
+.btn--disabled:hover {
+  background-color: var(--color-gray-300) !important;
+  transform: none !important;
+}
+
 /* Button Sizes */
 .btn--sm {
   padding: var(--spacing-1) var(--spacing-3);
