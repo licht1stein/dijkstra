@@ -2,7 +2,7 @@
 
 An interactive logistics route optimizer using Dijkstra's shortest path algorithm. Built with Preact for optimal performance and vanilla CSS for a clean, responsive design.
 
-🌐 **Live Demo**: [https://licht1stein.github.io/dijkstra-react/](https://licht1stein.github.io/dijkstra-react/)
+🌐 **Live Demo**: [https://licht1stein.github.io/dijkstra/](https://licht1stein.github.io/dijkstra/)
 
 ## Features
 
