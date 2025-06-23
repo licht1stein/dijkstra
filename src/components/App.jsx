@@ -2,6 +2,7 @@ import { h, Fragment } from 'preact';
 import { useState, useRef, useEffect } from 'preact/hooks';
 import { Graph } from '../core/graph';
 import { findShortestPath, calculateDefaultWeight, initWasm, getWasmPerformanceInfo } from '../core/dijkstra-wasm';
+import { findShortestPath as jsImplementation } from '../core/dijkstra';
 import { 
   normalizeEventCoordinates, 
   isPointInCircle, 
@@ -33,6 +34,9 @@ export function App() {
   const [shortestPath, setShortestPath] = useState(null);
   const [canvasDimensions, setCanvasDimensions] = useState({ width: 900, height: 600 });
   const [wasmInfo, setWasmInfo] = useState({ isWasmReady: false, implementation: 'JavaScript' });
+  const [implementationChoice, setImplementationChoice] = useState(() => {
+    return localStorage.getItem('dijkstra-implementation') || 'auto';
+  });
   
   // Refs
   const canvasRef = useRef(null);
@@ -279,8 +283,28 @@ export function App() {
       return;
     }
     
-    const result = findShortestPath(graph, startCity, endCity);
+    // Use different implementation based on user choice
+    let result;
+    if (implementationChoice === 'javascript') {
+      // Force JavaScript implementation
+      result = jsImplementation(graph, startCity, endCity);
+    } else {
+      // Use WASM implementation (or fallback automatically)
+      result = findShortestPath(graph, startCity, endCity);
+    }
     setShortestPath(result);
+  };
+
+  const handleImplementationChange = (choice) => {
+    setImplementationChoice(choice);
+    localStorage.setItem('dijkstra-implementation', choice);
+    
+    // Update wasmInfo to reflect the forced choice
+    if (choice === 'javascript') {
+      setWasmInfo(prev => ({ ...prev, implementation: 'JavaScript' }));
+    } else if (choice === 'wasm' && wasmInfo.isWasmReady) {
+      setWasmInfo(prev => ({ ...prev, implementation: 'WebAssembly' }));
+    }
   };
   
   const handleUpdateConnectionWeight = () => {
@@ -319,7 +343,7 @@ export function App() {
     }
   };
 
-  const handleAutoConnect = () => {
+  const handleRandomizeConnections = () => {
     const cities = graph.getCities();
     if (cities.length < 2) {
       alert('Need at least 2 cities to create connections');
@@ -328,19 +352,90 @@ export function App() {
 
     const newGraph = new Graph();
     newGraph.cities = [...cities];
-    newGraph.connections = [...graph.getConnections()];
+    newGraph.connections = []; // Clear existing connections
 
-    // Create random connections between cities
-    const maxConnections = Math.min(cities.length * 2, cities.length * (cities.length - 1) / 2);
-    const connectionsToAdd = Math.floor(Math.random() * maxConnections) + cities.length;
-
-    for (let i = 0; i < connectionsToAdd; i++) {
+    // Ensure each city has at least one connection by creating a spanning tree
+    const connected = new Set();
+    const unconnected = [...cities];
+    
+    // Start with first city
+    connected.add(unconnected[0].id);
+    unconnected.shift();
+    
+    // Connect remaining cities one by one to ensure connectivity
+    // But choose random connected cities, not always the first one
+    while (unconnected.length > 0) {
+      const connectedCities = cities.filter(c => connected.has(c.id));
+      const connectedCity = connectedCities[Math.floor(Math.random() * connectedCities.length)];
+      const unconnectedCity = unconnected[Math.floor(Math.random() * unconnected.length)];
+      
+      const weight = calculateDefaultWeight(connectedCity, unconnectedCity);
+      newGraph.addConnection(connectedCity.id, unconnectedCity.id, weight);
+      
+      connected.add(unconnectedCity.id);
+      unconnected.splice(unconnected.indexOf(unconnectedCity), 1);
+    }
+    
+    // Add strategic additional connections to create complex but realistic paths
+    // Target: 50-80% more connections than minimum spanning tree
+    const baseConnections = cities.length - 1; // MST connections
+    const targetConnections = baseConnections + Math.floor(cities.length * 0.8);
+    let currentConnections = baseConnections;
+    
+    // Create distance-weighted connection probability for realism
+    const cityPairs = [];
+    for (let i = 0; i < cities.length; i++) {
+      for (let j = i + 1; j < cities.length; j++) {
+        const distance = calculateDefaultWeight(cities[i], cities[j]);
+        cityPairs.push({
+          from: cities[i],
+          to: cities[j],
+          distance,
+          // Prefer shorter connections but allow some longer ones
+          probability: Math.max(0.1, 1 / (1 + distance / 30))
+        });
+      }
+    }
+    
+    // Sort by distance to prioritize shorter connections first
+    cityPairs.sort((a, b) => a.distance - b.distance);
+    
+    // Add connections with distance-based probability
+    for (const pair of cityPairs) {
+      if (currentConnections >= targetConnections) break;
+      
+      // Skip if already connected
+      const alreadyConnected = newGraph.getConnections().some(conn => 
+        (conn.from === pair.from.id && conn.to === pair.to.id) ||
+        (conn.to === pair.from.id && conn.from === pair.to.id)
+      );
+      
+      if (!alreadyConnected && Math.random() < pair.probability) {
+        newGraph.addConnection(pair.from.id, pair.to.id, pair.distance);
+        currentConnections++;
+      }
+    }
+    
+    // Add a few random long-distance connections for alternative routes
+    const longDistanceConnections = Math.floor(cities.length * 0.2);
+    let longConnections = 0;
+    
+    for (let attempts = 0; attempts < cities.length * 2 && longConnections < longDistanceConnections; attempts++) {
       const fromCity = cities[Math.floor(Math.random() * cities.length)];
       const toCity = cities[Math.floor(Math.random() * cities.length)];
       
       if (fromCity.id !== toCity.id) {
-        const weight = calculateDefaultWeight(fromCity, toCity);
-        newGraph.addConnection(fromCity.id, toCity.id, weight);
+        // Skip if already connected
+        const alreadyConnected = newGraph.getConnections().some(conn => 
+          (conn.from === fromCity.id && conn.to === toCity.id) ||
+          (conn.to === fromCity.id && conn.from === toCity.id)
+        );
+        
+        if (!alreadyConnected) {
+          const weight = calculateDefaultWeight(fromCity, toCity);
+          newGraph.addConnection(fromCity.id, toCity.id, weight);
+          longConnections++;
+        }
       }
     }
 
@@ -359,10 +454,10 @@ export function App() {
             </div>
             <div className="header-buttons">
               <button
-                onClick={handleAutoConnect}
+                onClick={handleRandomizeConnections}
                 className="btn btn--secondary"
               >
-                Auto Connect
+                Randomize Connections
               </button>
               <button
                 onClick={handleResetCanvas}
@@ -430,9 +525,11 @@ export function App() {
                 endCity={endCity}
                 shortestPath={shortestPath}
                 wasmInfo={wasmInfo}
+                implementationChoice={implementationChoice}
                 onStartCityChange={handleStartCityChange}
                 onEndCityChange={handleEndCityChange}
                 onCalculatePath={handleCalculatePath}
+                onImplementationChange={handleImplementationChange}
               />
             </div>
           </div>

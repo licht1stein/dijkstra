@@ -6,9 +6,11 @@ export function Controls({
   endCity,
   shortestPath,
   wasmInfo,
+  implementationChoice,
   onStartCityChange,
   onEndCityChange,
-  onCalculatePath
+  onCalculatePath,
+  onImplementationChange
 }) {
   return (
     <div className="controls">
@@ -88,14 +90,27 @@ export function Controls({
         </div>
       )}
       
-      {/* Performance Info */}
-      <div className="performance">
-        <h3 className="performance__title">Performance</h3>
-        <div className="performance__info">
-          <span className="performance__label">Implementation:</span>
-          <span className={`performance__value ${wasmInfo.isWasmReady ? 'performance__value--wasm' : ''}`}>
-            {wasmInfo.implementation}
-            {wasmInfo.isWasmReady && ' ⚡'}
+      {/* Implementation Choice */}
+      <div className="implementation">
+        <h3 className="implementation__title">Algorithm Implementation</h3>
+        <div className="implementation__selector">
+          <select
+            value={implementationChoice}
+            onChange={(e) => onImplementationChange(e.target.value)}
+            className="controls__select"
+          >
+            <option value="auto">Auto (WASM if available)</option>
+            <option value="wasm">WebAssembly</option>
+            <option value="javascript">JavaScript</option>
+          </select>
+        </div>
+        <div className="implementation__status">
+          <span className="implementation__label">Active:</span>
+          <span className={`implementation__value ${wasmInfo.isWasmReady && implementationChoice !== 'javascript' ? 'implementation__value--wasm' : ''}`}>
+            {implementationChoice === 'auto' ? wasmInfo.implementation : 
+             implementationChoice === 'wasm' ? (wasmInfo.isWasmReady ? 'WebAssembly' : 'WebAssembly (fallback to JS)') :
+             'JavaScript'}
+            {wasmInfo.isWasmReady && implementationChoice !== 'javascript' && ' ⚡'}
           </span>
         </div>
       </div>

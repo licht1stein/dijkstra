@@ -6,12 +6,14 @@ An interactive logistics route optimizer using Dijkstra's shortest path algorith
 
 ## Features
 
-- 🎯 **Interactive Canvas**: Click/tap to create cities (nodes)
+- 🎯 **Interactive Canvas**: Click/tap to create unlimited cities with smart naming (A-Z, AA-ZZ, AAA-ZZZ)
 - 🔗 **Smart Connections**: Drag between cities to create weighted routes
 - ✏️ **Weight Editing**: Click connection weights to modify them
 - 📱 **Touch Support**: Full mobile compatibility with long-press gestures
-- 🚀 **Shortest Path**: Real-time route optimization using Dijkstra's algorithm  
-- 💾 **Persistence**: Auto-saves state to localStorage
+- 🚀 **Dual Implementation**: Choose between WebAssembly and JavaScript algorithms
+- ⚡ **WebAssembly Performance**: High-speed pathfinding for large networks
+- 🎲 **Network Generator**: "Randomize Connections" creates complex, realistic route networks
+- 💾 **Persistence**: Auto-saves state and preferences to localStorage
 - 🔄 **Reset Function**: Clear canvas and start fresh
 - 📐 **Responsive Design**: Works seamlessly on all screen sizes
 
@@ -54,6 +56,7 @@ npm run build
 
 ### Tech Stack
 - **Preact** (~3KB) - Lightweight React alternative for optimal performance
+- **WebAssembly** - High-performance algorithm implementation with JavaScript fallback
 - **Vanilla CSS** - Custom styling with CSS variables and responsive design
 - **Vite** - Fast build tool and development server
 - **GitHub Actions** - Automated CI/CD deployment
@@ -62,23 +65,50 @@ npm run build
 ```
 src/
 ├── core/              # Business logic modules
-│   ├── dijkstra.js    # Shortest path algorithm
-│   ├── graph.js       # Graph data structure
+│   ├── dijkstra.js    # JavaScript implementation
+│   ├── dijkstra-wasm.js # WebAssembly implementation with fallback
+│   ├── graph.js       # Graph data structure with unlimited cities
 │   ├── geometry.js    # Coordinate calculations
 │   └── storage.js     # LocalStorage persistence
 ├── components/        # Preact components
-│   ├── App.jsx        # Main application
+│   ├── App.jsx        # Main application with dual algorithms
 │   ├── Canvas.jsx     # Canvas rendering
-│   ├── Controls.jsx   # Control panel
+│   ├── Controls.jsx   # Control panel with implementation selector
 │   └── ConnectionEditor.jsx
-└── styles/            # Vanilla CSS modules
-    ├── main.css       # Base styles & variables
-    ├── components.css # Component styles
-    └── buttons.css    # Button styles
+├── styles/            # Vanilla CSS modules
+│   ├── main.css       # Base styles & variables
+│   ├── components.css # Component styles
+│   └── buttons.css    # Button styles
+└── wasm/              # WebAssembly module
+    ├── dijkstra.wasm  # Compiled WebAssembly binary
+    ├── dijkstra.wat   # WebAssembly text format
+    └── build.js       # Build tooling
 ```
 
 ### Key Design Patterns
-- **Separated Business Logic**: Core algorithms isolated from UI
+- **Dual Algorithm Architecture**: WebAssembly + JavaScript implementations with automatic fallback
+- **Separated Business Logic**: Core algorithms isolated from UI components
+- **Intelligent Network Generation**: Creates realistic, complex route topologies
 - **Mobile-First Design**: Touch-friendly with responsive layouts  
 - **Performance Optimized**: Preact reduces bundle size by ~93% vs React
 - **Framework-Agnostic Core**: Business logic can be reused in any framework
+
+## Advanced Features
+
+### WebAssembly Implementation
+- **High Performance**: Optimized pathfinding for networks with hundreds of cities
+- **Automatic Fallback**: Gracefully falls back to JavaScript if WASM fails to load
+- **User Choice**: Manual selection between implementations via dropdown
+- **Performance Monitoring**: Real-time indication of active implementation
+
+### Smart Network Generation
+- **Realistic Topologies**: Creates networks resembling real logistics/transportation systems
+- **Guaranteed Connectivity**: Ensures all cities are reachable via spanning tree algorithm
+- **Complex Routing**: Multiple path options between cities for interesting optimization scenarios
+- **Distance-Weighted Connections**: Shorter routes more likely, with strategic long-distance alternatives
+- **Scalable**: Works efficiently from small (5 cities) to large (100+ cities) networks
+
+### Unlimited City Support
+- **Smart Naming**: Automatic progression from A-Z → AA-ZZ → AAA-ZZZ → City1, City2...
+- **No Artificial Limits**: Create as many cities as your device can handle
+- **Performance Scaling**: WebAssembly implementation maintains speed with large networks
